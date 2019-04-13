@@ -103,6 +103,7 @@ jobs:
     steps:
       - checkout
       - initialize_gcloud
+      - setup_remote_docker
       - build_image:
           image: <<parameters.image>>
           tag: <<parameters.tag>>
