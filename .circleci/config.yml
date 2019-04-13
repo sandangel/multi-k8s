@@ -6,12 +6,14 @@ commands:
   initialize_gcloud:
     description: Initilize the gcloud CLI
     steps:
-    - run: |
-        echo $GCLOUD_SERVICE_KEY | base64 --decode >> ${HOME}/gcloud-service-key.json
-        gcloud auth configure-docker --quiet
-        gcloud auth activate-service-account --quiet --key-file=${HOME}/gcloud-service-key.json
-        gcloud --quiet config set project $GOOGLE_PROJECT_ID
-        gcloud --quiet config set compute/zone $GOOGLE_COMPUTE_ZONE
+      - run:
+          name: Initialize gcloud CLI to connect to Google Cloud
+          command: |
+            echo $GCLOUD_SERVICE_KEY | base64 --decode >> ${HOME}/gcloud-service-key.json
+            gcloud auth configure-docker --quiet
+            gcloud auth activate-service-account --quiet --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project $GOOGLE_PROJECT_ID
+            gcloud --quiet config set compute/zone $GOOGLE_COMPUTE_ZONE
 
   build_image:
     description: Build a docker image
@@ -122,9 +124,9 @@ jobs:
       - run: gcloud container clusters get-credentials multi-cluster
       - run: |
           kubectl apply -f k8s
-          kubectl set image deployments/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:$SHORT_SHA
-          kubectl set image deployments/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:$SHORT_SHA
-          kubectl set image deployments/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:$SHORT_SHA
+          kubectl set image deployment/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:$(echo $CIRCLE_SHA1 | cut -c -7)
+          kubectl set image deployment/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:$(echo $CIRCLE_SHA1 | cut -c -7)
+          kubectl set image deployment/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:$(echo $CIRCLE_SHA1 | cut -c -7)
 
 workflows:
   version: 2
