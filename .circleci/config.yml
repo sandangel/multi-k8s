@@ -1,0 +1,53 @@
+version: 2.1
+orbs:
+  gcp-cli: circleci/gcp-cli@1.3.0
+  gcp-gcr: circleci/gcp-gcr@0.0.4
+
+jobs:
+  deploy:
+    executor:
+      name: gcp-cli/google
+    environment:
+      CLOUDSDK_CORE_DISABLE_PROMPTS: '1'
+      SHORT_SHA: $(echo $CIRCLE_SHA1 | cut -c -7)
+    steps:
+      - checkout
+      - run: echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account --key-file=-
+      - run: |
+          gcloud --quite config set project $GOOGLE_PROJECT_ID
+          gcloud --quite config set compute/zone $GOOGLE_COMPUTE_ZONE
+          gcloud components update kubectl
+          gcloud container clusters get-credentials multi-cluster
+      - run: |
+          kubectl apply -f k8s
+          kubectl set image deployments/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:$SHORT_SHA
+          kubectl set image deployments/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:$SHORT_SHA
+          kubectl set image deployments/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:$SHORT_SHA
+
+workflows:
+  build_and_deploy_to_gcloud:
+    jobs:
+      - gcp-gcr/build_and_push_image:
+          name: build-worker
+          registry-url: asia.gcr.io
+          image: multi-worker
+          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
+          path-to-dockerfile: worker/Dockerfile
+      - gcp-gcr/build_and_push_image:
+          name: build-server
+          registry-url: asia.gcr.io
+          image: multi-server
+          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
+          path-to-dockerfile: server/Dockerfile
+      - gcp-gcr/build_and_push_image:
+          name: build-client
+          registry-url: asia.gcr.io
+          image: multi-client
+          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
+          path-to-dockerfile: client/Dockerfile
+      - deploy:
+          context: personal-gcloud
+          requires:
+            - build-client
+            - build-server
+            - build-worker
