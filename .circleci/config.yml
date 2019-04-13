@@ -39,11 +39,7 @@ commands:
       - run:
           name: Build docker image
           command: >
-            docker build -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>>
-              <<# parameters.latest_tag >>
-                -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest
-              <</ parameters.latest_tag >>
-              <<parameters.path-to-dockerfile>>
+            docker build -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>> <<# parameters.latest_tag >> -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest <</ parameters.latest_tag >> <<parameters.path-to-dockerfile>>
 
   push_image:
     description: "Push a container image to the GCR registry"
