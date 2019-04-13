@@ -1,7 +1,6 @@
 version: 2.1
 
 var_1: &short_sha $(git rev-parse --short HEAD)
-var_2: &parameterized_image <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>
 
 orbs:
   gcp-cli: circleci/gcp-cli@1.3.0
@@ -45,9 +44,9 @@ commands:
       - run:
           name: Build docker image
           command: >
-            docker build -t *parameterized_image:<<parameters.tag>>
+            docker build -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>>
             <<# parameters.latest_tag >>
-            -t *parameterized_image:latest
+            -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest
             <</ parameters.latest_tag >>
             <<parameters.path-to-dockerfile>>
 
@@ -71,13 +70,15 @@ commands:
         default: false
     steps:
       - run:
-          name: Push image to GCR
+          name: Push tag image to GCR
           command: |
-            docker push *parameterized_image:<<parameters.tag>>
+            docker push <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>>
       - when:
           condition: <<parameters.latest_tag>>
           steps:
-            - run: docker push *parameterized_image:latest
+            - run:
+                name: Push latest image to GCR
+                command: docker push <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest
 
 executors:
   google:
@@ -125,12 +126,17 @@ jobs:
     steps:
       - checkout
       - initialize_gcloud
-      - run: gcloud container clusters get-credentials multi-cluster
-      - run: |
-          kubectl apply -f k8s
-          kubectl set image deployment/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:*short_sha
-          kubectl set image deployment/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:*short_sha
-          kubectl set image deployment/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:*short_sha
+      - run:
+          name: Get cluster credentials
+          command: gcloud container clusters get-credentials multi-cluster
+      - run:
+          name: Update cluster image
+          command: |
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            kubectl apply -f k8s
+            kubectl set image deployment/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:$SHORT_SHA
+            kubectl set image deployment/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:$SHORT_SHA
+            kubectl set image deployment/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:$SHORT_SHA
 
 workflows:
   version: 2
