@@ -1,4 +1,8 @@
 version: 2.1
+
+var_1: &short_sha $(git rev-parse --short HEAD)
+var_2: &parameterized_image <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>
+
 orbs:
   gcp-cli: circleci/gcp-cli@1.3.0
 
@@ -41,9 +45,9 @@ commands:
       - run:
           name: Build docker image
           command: >
-            docker build -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>>
+            docker build -t *parameterized_image:<<parameters.tag>>
             <<# parameters.latest_tag >>
-            -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest
+            -t *parameterized_image:latest
             <</ parameters.latest_tag >>
             <<parameters.path-to-dockerfile>>
 
@@ -69,11 +73,11 @@ commands:
       - run:
           name: Push image to GCR
           command: |
-            docker push <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>>
+            docker push *parameterized_image:<<parameters.tag>>
       - when:
           condition: <<parameters.latest_tag>>
           steps:
-            - run: docker push <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest
+            - run: docker push *parameterized_image:latest
 
 executors:
   google:
@@ -124,9 +128,9 @@ jobs:
       - run: gcloud container clusters get-credentials multi-cluster
       - run: |
           kubectl apply -f k8s
-          kubectl set image deployment/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:$(echo $CIRCLE_SHA1 | cut -c -7)
-          kubectl set image deployment/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:$(echo $CIRCLE_SHA1 | cut -c -7)
-          kubectl set image deployment/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:$(echo $CIRCLE_SHA1 | cut -c -7)
+          kubectl set image deployment/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:*short_sha
+          kubectl set image deployment/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:*short_sha
+          kubectl set image deployment/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:*short_sha
 
 workflows:
   version: 2
@@ -135,19 +139,19 @@ workflows:
       - build_and_push_to_gcr:
           name: build-worker
           image: multi-worker
-          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
+          tag: *short_sha
           latest_tag: true
           path-to-dockerfile: ./worker
       - build_and_push_to_gcr:
           name: build-server
           image: multi-server
-          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
+          tag: *short_sha
           latest_tag: true
           path-to-dockerfile: ./server
       - build_and_push_to_gcr:
           name: build-client
           image: multi-client
-          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
+          tag: *short_sha
           latest_tag: true
           path-to-dockerfile: ./client
       - deploy:
