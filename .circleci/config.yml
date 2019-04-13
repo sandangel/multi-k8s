@@ -9,7 +9,7 @@ commands:
     - run: |
         echo $GCLOUD_SERVICE_KEY | base64 --decode >> ${HOME}/gcloud-service-key.json
         gcloud auth configure-docker --quiet
-        gcloud auth activate-service-account --quite --key-file=${HOME}/gcloud-service-key.json
+        gcloud auth activate-service-account --quiet --key-file=${HOME}/gcloud-service-key.json
         gcloud --quiet config set project $GOOGLE_PROJECT_ID
         gcloud --quiet config set compute/zone $GOOGLE_COMPUTE_ZONE
 
