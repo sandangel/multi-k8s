@@ -119,9 +119,7 @@ jobs:
     steps:
       - checkout
       - initialize_gcloud
-      - run: |
-          gcloud components update kubectl
-          gcloud container clusters get-credentials multi-cluster
+      - run: gcloud container clusters get-credentials multi-cluster
       - run: |
           kubectl apply -f k8s
           kubectl set image deployments/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:$SHORT_SHA
