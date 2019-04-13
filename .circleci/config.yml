@@ -39,7 +39,11 @@ commands:
       - run:
           name: Build docker image
           command: >
-            docker build -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>> <<# parameters.latest_tag >> -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest <</ parameters.latest_tag >> <<parameters.path-to-dockerfile>>
+            docker build -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:<<parameters.tag>>
+            <<# parameters.latest_tag >>
+            -t <<parameters.registry-url>>/$GOOGLE_PROJECT_ID/<<parameters.image>>:latest
+            <</ parameters.latest_tag >>
+            <<parameters.path-to-dockerfile>>
 
   push_image:
     description: "Push a container image to the GCR registry"
@@ -76,7 +80,6 @@ executors:
       - image: google/cloud-sdk
     environment:
       CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
-      SHORT_SHA: $(echo $CIRCLE_SHA1 | cut -c -7)
 
 jobs:
   build_and_push_to_gcr:
@@ -131,19 +134,19 @@ workflows:
       - build_and_push_to_gcr:
           name: build-worker
           image: multi-worker
-          tag: $SHORT_SHA
+          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
           latest_tag: true
           path-to-dockerfile: ./worker
       - build_and_push_to_gcr:
           name: build-server
           image: multi-server
-          tag: $SHORT_SHA
+          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
           latest_tag: true
           path-to-dockerfile: ./server
       - build_and_push_to_gcr:
           name: build-client
           image: multi-client
-          tag: $SHORT_SHA
+          tag: $(echo $CIRCLE_SHA1 | cut -c -7)
           latest_tag: true
           path-to-dockerfile: ./client
       - deploy:
