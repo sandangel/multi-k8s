@@ -8,20 +8,6 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     certmanager.k8s.io/cluster-issuer: "letsencrypt-prod"
 
-aliases:
-  - &host_rule
-    host: multi-k8s
-    http:
-      paths:
-        - path: /?(.*)
-          backend:
-            serviceName: client-cluster-ip-service
-            servicePort: 3000
-        - path: /api/?(.*)
-          backend:
-            serviceName: server-cluster-ip-service
-            servicePort: 5000
-
 spec:
   tls:
     - hosts:
@@ -29,7 +15,17 @@ spec:
         - www.san-ng.dev
       secretName: san-ng-dev
   rules:
-    - <<: *host_rule
+    - &host_rule
       host: san-ng.dev
+      http:
+        paths:
+          - path: /?(.*)
+            backend:
+              serviceName: client-cluster-ip-service
+              servicePort: 3000
+          - path: /api/?(.*)
+            backend:
+              serviceName: server-cluster-ip-service
+              servicePort: 5000
     - <<: *host_rule
       host: www.san-ng.dev
