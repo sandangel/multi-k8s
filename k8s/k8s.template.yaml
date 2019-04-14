@@ -13,7 +13,6 @@ spec:
     - hosts:
         - '*.san-ng.dev'
         - 'san-ng.dev'
-        - 'www.san-ng.dev'
       secretName: san-ng-dev
   rules:
     - &host_rule
@@ -28,8 +27,6 @@ spec:
             backend:
               serviceName: server-cluster-ip-service
               servicePort: 5000
-    - <<: *host_rule
-      host: www.san-ng.dev
     - host: __BRANCH_NAME__.san-ng.dev
       http:
         paths:
@@ -41,46 +38,6 @@ spec:
             backend:
               serviceName: server-cluster-ip-service-__BRANCH_NAME__
               servicePort: 5000
-
----
-
-### cert-manager
-apiVersion: certmanager.k8s.io/v1alpha1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: 'vinhsannguyen91@gmail.com'
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    http01: {}
-
----
-
-apiVersion: certmanager.k8s.io/v1alpha1
-kind: Certificate
-metadata:
-  name: san-ng-dev-tls
-spec:
-  secretName: san-ng-dev
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  commonName: san-ng.dev
-  dnsNames:
-    - san-ng.dev
-    - www.san-ng.dev
-    - '*.san-ng.dev'
-  acme:
-    config:
-      - http01:
-          ingressClass: nginx
-        domains:
-          - san-ng.dev
-          - www.san-ng.dev
-          - '*.san-ng.dev'
 
 ### client-deployment
 ---
