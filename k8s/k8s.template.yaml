@@ -12,11 +12,12 @@ spec:
   tls:
     - hosts:
         - '*.san-ng.dev'
-        - 'www.*.san-ng.dev'
+        - 'san-ng.dev'
+        - 'www.san-ng.dev'
       secretName: san-ng-dev
   rules:
     - &host_rule
-      host: __BRANCH_NAME__.san-ng.dev
+      host: san-ng.dev
       http:
         paths:
           - path: /?(.*)
@@ -27,6 +28,10 @@ spec:
             backend:
               serviceName: server-cluster-ip-service-__BRANCH_NAME__
               servicePort: 5000
+    - <<: *host_rule
+      host: www.san-ng.dev
+    - <<: *host_rule
+      host: __BRANCH_NAME__.san-ng.dev
     - <<: *host_rule
       host: www.__BRANCH_NAME__.san-ng.dev
 
