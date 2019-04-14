@@ -87,10 +87,15 @@ executors:
       - image: google/cloud-sdk
     environment:
       CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
+  default:
+    description: Default circleci machine
+    machine: true
+    environment:
+      CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
 
 jobs:
   build_and_push_to_gcr:
-    executor: google
+    executor: default
     parameters:
       path-to-dockerfile:
         description: The relative path to the Dockerfile to use when building image
@@ -109,8 +114,8 @@ jobs:
         default: false
     steps:
       - checkout
+      - gcp-cli/install
       - initialize_gcloud
-      - setup_remote_docker
       - build_image:
           image: <<parameters.image>>
           tag: <<parameters.tag>>
@@ -122,9 +127,13 @@ jobs:
           latest_tag: <<parameters.latest_tag>>
 
   deploy:
-    executor: google
+    executor: default
     steps:
       - checkout
+      - gcp-cli/install
+      - run:
+          name: Install kubectl
+          command: gcloud components install kubectl
       - initialize_gcloud
       - run:
           name: Get cluster credentials
