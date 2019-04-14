@@ -31,7 +31,7 @@ commands:
       tag:
         description: A docker image tag
         type: string
-        default: "latest"
+        default: 'latest'
       latest_tag:
         description: Tag image with latest
         type: boolean
@@ -51,7 +51,7 @@ commands:
             <<parameters.path-to-dockerfile>>
 
   push_image:
-    description: "Push a container image to the GCR registry"
+    description: Push a container image to the GCR registry
     parameters:
       registry-url:
         description: The GCR registry URL from ['', us, eu, asia].gcr.io
@@ -86,7 +86,7 @@ executors:
     docker:
       - image: google/cloud-sdk
     environment:
-      CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
+      CLOUDSDK_CORE_DISABLE_PROMPTS: '1'
 
 jobs:
   build_and_push_to_gcr:
@@ -95,14 +95,14 @@ jobs:
       path-to-dockerfile:
         description: The relative path to the Dockerfile to use when building image
         type: string
-        default: "."
+        default: '.'
       image:
         description: A name for your docker image
         type: string
       tag:
         description: A docker image tag
         type: string
-        default: "latest"
+        default: 'latest'
       latest_tag:
         description: Build and push with latest tag
         type: boolean
@@ -121,7 +121,7 @@ jobs:
           tag: <<parameters.tag>>
           latest_tag: <<parameters.latest_tag>>
 
-  deploy:
+  deploy-stg:
     executor: google
     steps:
       - checkout
@@ -130,13 +130,34 @@ jobs:
           name: Get cluster credentials
           command: gcloud container clusters get-credentials multi-cluster
       - run:
-          name: Update cluster image
+          name: Patch Ingress resources
           command: |
             SHORT_SHA=$(git rev-parse --short HEAD)
-            kubectl apply -f k8s
-            kubectl set image deployment/server-deployment server=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-server:$SHORT_SHA
-            kubectl set image deployment/client-deployment client=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-client:$SHORT_SHA
-            kubectl set image deployment/worker-deployment worker=asia.gcr.io/$GOOGLE_PROJECT_ID/multi-worker:$SHORT_SHA
+            perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.deploy.yaml
+            perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.deploy.yaml
+            perl -pi.bak -e "s/__BRANCH_NAME__/$CIRCLE_BRANCH/g" k8s.deploy.yaml
+      - run:
+          name: Update cluster image
+          command: kubectl apply -f k8s.deploy.yaml
+
+  deploy-prod:
+    executor: google
+    steps:
+      - checkout
+      - initialize_gcloud
+      - run:
+          name: Get cluster credentials
+          command: gcloud container clusters get-credentials multi-cluster
+      - run:
+          name: Patch Ingress resources
+          command: |
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.deploy.yaml
+            perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.deploy.yaml
+            perl -pi.bak -e "s/__BRANCH_NAME__/$CIRCLE_BRANCH/g" k8s.deploy.yaml
+      - run:
+          name: Update cluster image
+          command: kubectl apply -f k8s.deploy.yaml
 
 workflows:
   version: 2
@@ -160,8 +181,26 @@ workflows:
           tag: *short_sha
           latest_tag: true
           path-to-dockerfile: ./client
-      - deploy:
+      - deploy-stg:
           requires:
             - build-client
             - build-server
             - build-worker
+          filters:
+	          branches:
+              ignore: master
+      - hold:
+          type: approval
+          requires:
+            - build-client
+            - build-server
+            - build-worker
+          filters:
+	          branches:
+              only: master
+      - deploy-prod:
+          requires:
+            - hold
+          filters:
+	          branches:
+              only: master
