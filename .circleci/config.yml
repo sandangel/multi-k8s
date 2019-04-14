@@ -154,12 +154,12 @@ jobs:
           name: Patch Ingress resources
           command: |
             SHORT_SHA=$(git rev-parse --short HEAD)
-            perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.deploy.yaml
-            perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.deploy.yaml
-            perl -pi.bak -e "s/__BRANCH_NAME__/$CIRCLE_BRANCH/g" k8s.deploy.yaml
+            perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.master.yaml
+            perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.master.yaml
+            perl -pi.bak -e "s/__BRANCH_NAME__/master/g" k8s.master.yaml
       - run:
           name: Update cluster image
-          command: kubectl apply -f k8s.deploy.yaml
+          command: kubectl apply -f k8s.master.yaml
 
 workflows:
   version: 2

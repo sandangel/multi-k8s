@@ -21,12 +21,14 @@ spec:
         paths:
           - path: /?(.*)
             backend:
-              serviceName: client-cluster-ip-service
+              serviceName: client-cluster-ip-service-master
               servicePort: 3000
           - path: /api/?(.*)
             backend:
-              serviceName: server-cluster-ip-service
+              serviceName: server-cluster-ip-service-master
               servicePort: 5000
+    - <<: *host_rule
+      host: www.san-ng.dev
     - host: __BRANCH_NAME__.san-ng.dev
       http:
         paths:
