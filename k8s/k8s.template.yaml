@@ -13,7 +13,7 @@ spec:
     - hosts:
         - '*.san-ng.dev'
         - 'san-ng.dev'
-      secretName: san-ng-dev
+      secretName: san-ng-dev-wildcard
   rules:
     - &host_rule
       host: san-ng.dev
