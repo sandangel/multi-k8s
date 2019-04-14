@@ -22,18 +22,25 @@ spec:
         paths:
           - path: /?(.*)
             backend:
+              serviceName: client-cluster-ip-service
+              servicePort: 3000
+          - path: /api/?(.*)
+            backend:
+              serviceName: server-cluster-ip-service
+              servicePort: 5000
+    - <<: *host_rule
+      host: www.san-ng.dev
+    - host: __BRANCH_NAME__.san-ng.dev
+      http:
+        paths:
+          - path: /?(.*)
+            backend:
               serviceName: client-cluster-ip-service-__BRANCH_NAME__
               servicePort: 3000
           - path: /api/?(.*)
             backend:
               serviceName: server-cluster-ip-service-__BRANCH_NAME__
               servicePort: 5000
-    - <<: *host_rule
-      host: www.san-ng.dev
-    - <<: *host_rule
-      host: __BRANCH_NAME__.san-ng.dev
-    - <<: *host_rule
-      host: www.__BRANCH_NAME__.san-ng.dev
 
 ---
 
@@ -65,6 +72,7 @@ spec:
   dnsNames:
     - san-ng.dev
     - www.san-ng.dev
+    - '*.san-ng.dev'
   acme:
     config:
       - http01:
@@ -72,6 +80,7 @@ spec:
         domains:
           - san-ng.dev
           - www.san-ng.dev
+          - '*.san-ng.dev'
 
 ### client-deployment
 ---
