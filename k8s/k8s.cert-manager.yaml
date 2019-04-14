@@ -1,0 +1,42 @@
+### cert-manager
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: 'vinhsannguyen91@gmail.com'
+    privateKeySecretRef:
+      name: letsencrypt-prod
+      dns01:
+        providers:
+          - name: clouddns
+            serviceAccountSecretref:
+              name: clouddns
+              key: clouddns.key.json
+            project: handy-balancer-236809
+
+---
+
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: san-ng-dev-wildcard-tls
+spec:
+  secretName: san-ng-dev-wildcard
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: '*.san-ng.dev'
+  dnsNames:
+    - 'san-ng.dev'
+    - '*.san-ng.dev'
+  acme:
+    config:
+      - dns01:
+          provider: clouddns
+          hostedZoneName: san-ng-dev
+        domains:
+          - 'san-ng.dev'
+          - '*.san-ng.dev'
