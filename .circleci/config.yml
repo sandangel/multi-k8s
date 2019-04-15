@@ -139,7 +139,6 @@ jobs:
       - run:
           name: Update cluster image
           command: |
-            kubectl apply -f k8s/k8s.cert-manager.yaml
             kubectl apply -f k8s.$CIRCLE_BRANCH.yaml
 
   deploy-prod:
@@ -150,61 +149,59 @@ jobs:
       - run:
           name: Get cluster credentials
           command: gcloud container clusters get-credentials multi-cluster
-      # - run:
-      #     name: Patch Ingress resources
-      #     command: |
-      #       SHORT_SHA=$(git rev-parse --short HEAD)
-      #       perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.master.yaml
-      #       perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.master.yaml
-      #       perl -pi.bak -e "s/__BRANCH_NAME__/master/g" k8s.master.yaml
+      - run:
+          name: Patch Ingress resources
+          command: |
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.master.yaml
+            perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.master.yaml
+            perl -pi.bak -e "s/__BRANCH_NAME__/master/g" k8s.master.yaml
       - run:
           name: Update cluster image
-          command: |
-            kubectl apply -f k8s/cert-manager.yaml
-            kubectl apply -f k8s/ingress-service.yaml
+          command: kubectl apply -f k8s.master.yaml
 
 workflows:
   version: 2
   build_and_deploy_to_gcloud:
     jobs:
-      # - build_and_push_to_gcr:
-      #     name: build-worker
-      #     image: multi-worker
-      #     tag: *short_sha
-      #     latest_tag: true
-      #     path-to-dockerfile: ./worker
-      # - build_and_push_to_gcr:
-      #     name: build-server
-      #     image: multi-server
-      #     tag: *short_sha
-      #     latest_tag: true
-      #     path-to-dockerfile: ./server
-      # - build_and_push_to_gcr:
-      #     name: build-client
-      #     image: multi-client
-      #     tag: *short_sha
-      #     latest_tag: true
-      #     path-to-dockerfile: ./client
-      # - deploy-stg:
-          # requires:
-          #   - build-client
-          #   - build-server
-          #   - build-worker
-          # filters:
-          #   branches:
-          #     ignore: master
-      # - hold:
-      #     type: approval
-      #     requires:
-      #       - build-client
-      #       - build-server
-      #       - build-worker
-      #     filters:
-      #       branches:
-      #         only: master
-      - deploy-prod
-          # requires:
-          #   - hold
-          # filters:
-          #   branches:
-          #     only: master
+      - build_and_push_to_gcr:
+          name: build-worker
+          image: multi-worker
+          tag: *short_sha
+          latest_tag: true
+          path-to-dockerfile: ./worker
+      - build_and_push_to_gcr:
+          name: build-server
+          image: multi-server
+          tag: *short_sha
+          latest_tag: true
+          path-to-dockerfile: ./server
+      - build_and_push_to_gcr:
+          name: build-client
+          image: multi-client
+          tag: *short_sha
+          latest_tag: true
+          path-to-dockerfile: ./client
+      - deploy-stg:
+          requires:
+            - build-client
+            - build-server
+            - build-worker
+          filters:
+            branches:
+              ignore: master
+      - hold:
+          type: approval
+          requires:
+            - build-client
+            - build-server
+            - build-worker
+          filters:
+            branches:
+              only: master
+      - deploy-prod:
+          requires:
+            - hold
+          filters:
+            branches:
+              only: master
