@@ -5,14 +5,15 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    certmanager.k8s.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    certmanager.k8s.io/cluster-issuer: 'letsencrypt-prod-http'
 
 spec:
   tls:
     - hosts:
         - san-ng.dev
         - www.san-ng.dev
+        - test-branch.san-ng.dev
       secretName: san-ng-dev
   rules:
     - &host_rule
@@ -21,11 +22,22 @@ spec:
         paths:
           - path: /?(.*)
             backend:
-              serviceName: client-cluster-ip-service
+              serviceName: client-cluster-ip-service-master
               servicePort: 3000
           - path: /api/?(.*)
             backend:
-              serviceName: server-cluster-ip-service
+              serviceName: server-cluster-ip-service-master
               servicePort: 5000
     - <<: *host_rule
       host: www.san-ng.dev
+    - host: test-branch.san-ng.dev
+      http:
+        paths:
+          - path: /?(.*)
+            backend:
+              serviceName: client-cluster-ip-service-test-branch
+              servicePort: 3000
+          - path: /api/?(.*)
+            backend:
+              serviceName: server-cluster-ip-service-test-branch
+              servicePort: 5000

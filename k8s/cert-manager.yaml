@@ -1,17 +1,16 @@
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-prod
+  name: letsencrypt-prod-http
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: "vinhsannguyen91@gmail.com"
+    email: 'vinhsannguyen91@gmail.com'
     privateKeySecretRef:
-      name: letsencrypt-prod
+      name: letsencrypt-prod-http
     http01: {}
 
 ---
-
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
@@ -19,12 +18,14 @@ metadata:
 spec:
   secretName: san-ng-dev
   issuerRef:
-    name: letsencrypt-prod
+    name: letsencrypt-prod-http
     kind: ClusterIssuer
   commonName: san-ng.dev
   dnsNames:
     - san-ng.dev
     - www.san-ng.dev
+    - test-branch.san-ng.dev
+    - test-branch-2.san-ng.dev
   acme:
     config:
       - http01:
@@ -32,4 +33,5 @@ spec:
         domains:
           - san-ng.dev
           - www.san-ng.dev
-
+          - test-branch.san-ng.dev
+          - test-branch-2.san-ng.dev

@@ -133,13 +133,18 @@ jobs:
           name: Patch Ingress resources
           command: |
             SHORT_SHA=$(git rev-parse --short HEAD)
+            STG_CLIENT_REPLICAS=1
+            STG_SERVEr_REPLICAS=1
+            STG_WORKER_REPLICAS=1
             perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.$CIRCLE_BRANCH.yaml
             perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.$CIRCLE_BRANCH.yaml
             perl -pi.bak -e "s/__BRANCH_NAME__/$CIRCLE_BRANCH/g" k8s.$CIRCLE_BRANCH.yaml
+            perl -pi.bak -e "s/__CLIENT_REPLICAS__/$STG_CLIENT_REPLICAS/g" k8s.$CIRCLE_BRANCH.yaml
+            perl -pi.bak -e "s/__SERVER_REPLICAS__/$STG_SERVER_REPLICAS/g" k8s.$CIRCLE_BRANCH.yaml
+            perl -pi.bak -e "s/__WORKER_REPLICAS__/$STG_WORKER_REPLICAS/g" k8s.$CIRCLE_BRANCH.yaml
       - run:
           name: Update cluster image
           command: |
-            kubectl apply -f k8s/k8s.cert-manager.yaml
             kubectl apply -f k8s.$CIRCLE_BRANCH.yaml
 
   deploy-prod:
@@ -154,9 +159,15 @@ jobs:
           name: Patch Ingress resources
           command: |
             SHORT_SHA=$(git rev-parse --short HEAD)
+            PROD_CLIENT_REPLICAS=1
+            PROD_SERVER_REPLICAS=3
+            PROD_WORKER_REPLICAS=1
             perl -pe "s/__PROJECT_ID__/$GOOGLE_PROJECT_ID/g" k8s/k8s.template.yaml > k8s.master.yaml
             perl -pi.bak -e "s/__SHORT_SHA__/$SHORT_SHA/g" k8s.master.yaml
             perl -pi.bak -e "s/__BRANCH_NAME__/master/g" k8s.master.yaml
+            perl -pi.bak -e "s/__CLIENT_REPLICAS__/$PROD_CLIENT_REPLICAS/g" k8s.master.yaml
+            perl -pi.bak -e "s/__SERVER_REPLICAS__/$PROD_SERVER_REPLICAS/g" k8s.master.yaml
+            perl -pi.bak -e "s/__WORKER_REPLICAS__/$PROD_WORKER_REPLICAS/g" k8s.master.yaml
       - run:
           name: Update cluster image
           command: kubectl apply -f k8s.master.yaml
