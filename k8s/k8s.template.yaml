@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: client-deployment-__BRANCH_NAME__
 spec:
-  replicas: 1
+  replicas: __CLIENT_REPLICAS__
   selector:
     matchLabels:
       component: web-__BRANCH_NAME__
@@ -39,7 +39,7 @@ kind: Deployment
 metadata:
   name: server-deployment-__BRANCH_NAME__
 spec:
-  replicas: 3
+  replicas: __SERVER_REPLICAS__
   selector:
     matchLabels:
       component: server-__BRANCH_NAME__
@@ -92,7 +92,7 @@ kind: Deployment
 metadata:
   name: worker-deployment-__BRANCH_NAME__
 spec:
-  replicas: 1
+  replicas: __WORKER_REPLICAS__
   selector:
     matchLabels:
       component: worker-__BRANCH_NAME__
@@ -109,98 +109,3 @@ spec:
               value: redis-cluster-ip-service
             - name: REDIST_PORT
               value: '6379'
-
-### database
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: database-persistent-volume-claim
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: postgres-deployment
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      component: postgres
-  template:
-    metadata:
-      labels:
-        component: postgres
-    spec:
-      volumes:
-        - name: postgres-storage
-          persistentVolumeClaim:
-            claimName: database-persistent-volume-claim
-      containers:
-        - name: postgres
-          image: postgres
-          env:
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: pgpassword
-                  key: PGPASSWORD
-          ports:
-            - containerPort: 5432
-          volumeMounts:
-            - name: postgres-storage
-              mountPath: /var/lib/postgresql/data
-              subPath: postgres
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-cluster-ip-service
-spec:
-  type: ClusterIP
-  selector:
-    component: postgres
-  ports:
-    - port: 5432
-      targetPort: 5432
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: redis-deployment
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      component: redis
-  template:
-    metadata:
-      labels:
-        component: redis
-    spec:
-      containers:
-        - name: redis
-          image: redis
-          ports:
-            - containerPort: 6379
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-cluster-ip-service
-spec:
-  type: ClusterIP
-  selector:
-    component: redis
-  ports:
-    - port: 6379
-      targetPort: 6379

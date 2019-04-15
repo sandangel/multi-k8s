@@ -25,6 +25,7 @@ spec:
     - san-ng.dev
     - www.san-ng.dev
     - test-branch.san-ng.dev
+    - test-branch-2.san-ng.dev
   acme:
     config:
       - http01:
@@ -33,3 +34,4 @@ spec:
           - san-ng.dev
           - www.san-ng.dev
           - test-branch.san-ng.dev
+          - test-branch-2.san-ng.dev
