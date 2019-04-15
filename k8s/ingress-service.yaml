@@ -41,3 +41,14 @@ spec:
             backend:
               serviceName: server-cluster-ip-service-test-branch
               servicePort: 5000
+    - host: test-branch-2.san-ng.dev
+      http:
+        paths:
+          - path: /?(.*)
+            backend:
+              serviceName: client-cluster-ip-service-test-branch-2
+              servicePort: 3000
+          - path: /api/?(.*)
+            backend:
+              serviceName: server-cluster-ip-service-test-branch-2
+              servicePort: 5000
