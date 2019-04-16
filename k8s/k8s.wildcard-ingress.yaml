@@ -1,41 +1,40 @@
-### cert-manager
-apiVersion: certmanager.k8s.io/v1alpha1
-kind: ClusterIssuer
+apiVersion: extensions/v1beta1
+kind: Ingress
 metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: 'vinhsannguyen91@gmail.com'
-    privateKeySecretRef:
-      name: letsencrypt-prod
-      dns01:
-        providers:
-          - name: clouddns
-            serviceAccountSecretref:
-              name: clouddns
-              key: clouddns.key.json
-            project: handy-balancer-236809
+  name: __BRANCH_NAME__-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    certmanager.k8s.io/cluster-issuer: 'letsencrypt-prod'
 
----
-apiVersion: certmanager.k8s.io/v1alpha1
-kind: Certificate
-metadata:
-  name: san-ng-dev-wildcard-tls
 spec:
-  secretName: san-ng-dev-wildcard
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  commonName: '*.san-ng.dev'
-  dnsNames:
-    - 'san-ng.dev'
-    - '*.san-ng.dev'
-  acme:
-    config:
-      - dns01:
-          provider: clouddns
-          hostedZoneName: san-ng-dev
-        domains:
-          - 'san-ng.dev'
-          - '*.san-ng.dev'
+  tls:
+    - hosts:
+        - '*.san-ng.dev'
+        - 'san-ng.dev'
+      secretName: san-ng-dev-wildcard
+  rules:
+    - &host_rule
+      host: san-ng.dev
+      http:
+        paths:
+          - path: /?(.*)
+            backend:
+              serviceName: client-cluster-ip-service-master
+              servicePort: 3000
+          - path: /api/?(.*)
+            backend:
+              serviceName: server-cluster-ip-service-master
+              servicePort: 5000
+    - host: __BRANCH_NAME__.san-ng.dev
+      http:
+        paths:
+          - path: /?(.*)
+            backend:
+              serviceName: client-cluster-ip-service-__BRANCH_NAME__
+              servicePort: 3000
+          - path: /api/?(.*)
+            backend:
+              serviceName: server-cluster-ip-service-__BRANCH_NAME__
+              servicePort: 5000
