@@ -31,12 +31,10 @@ spec:
   commonName: '*.san-ng.dev'
   dnsNames:
     - 'san-ng.dev'
-    - '*.san-ng.dev'
   acme:
     config:
       - dns01:
           provider: clouddns
-          hostedZoneName: san-ng-dev
         domains:
-          - 'san-ng.dev'
           - '*.san-ng.dev'
+          - 'san-ng.dev'
