@@ -6,19 +6,19 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: 'vinhsannguyen91@gmail.com'
+    email: vinhsannguyen91@gmail.com
     privateKeySecretRef:
       name: letsencrypt-prod
-      dns01:
-        providers:
-          - name: clouddns
+    dns01:
+      providers:
+        - name: clouddns
+          clouddns:
             serviceAccountSecretref:
               name: clouddns
               key: clouddns.key.json
             project: handy-balancer-236809
 
 ---
-
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
