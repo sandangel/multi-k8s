@@ -14,8 +14,8 @@ spec:
         - name: clouddns
           clouddns:
             serviceAccountSecretref:
-              name: clouddns-dns01-solver-svc-acct
-              key: key.json
+              name: clouddns
+              key: clouddns-service-account.json
             project: handy-balancer-236809
 
 ---
